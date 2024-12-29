@@ -11,7 +11,6 @@ glibc_version = "2.34-r0"
 
 docker_arches = [
     "linux/amd64",
-    "linux/arm64",
 ]
 
 def read_file(file):
