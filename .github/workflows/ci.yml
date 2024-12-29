@@ -33,7 +33,7 @@ jobs:
       - uses: docker/login-action@v3
         if: github.event_name != 'pull_request'
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          username: sirmark
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - id: meta
@@ -45,6 +45,8 @@ jobs:
 
       - uses: docker/build-push-action@v6
         if: github.event_name != 'pull_request'
+        env:
+          DOCKER_BUILD_SUMMARY: false
         with:
           context: ${{ matrix.context }}
           platforms: ${{ matrix.platforms }}
