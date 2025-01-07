@@ -25,7 +25,7 @@ def write_file(file, contents):
         f.write(contents)
 
 def update_alpine_gblic():
-    template = read_file("Dockerfile-alpine-glibc.template")
+    template = read_file("Dockerfile-rust-alpine-glibc.template")
 
     for version in rust_versions:
         rendered = template \
