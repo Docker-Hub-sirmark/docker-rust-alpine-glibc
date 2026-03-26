@@ -1,1 +1,7 @@
 __pycache__
+*.rsa
+*.pkg*
+*.gz
+src
+pkg
+packages

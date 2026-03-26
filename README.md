@@ -8,24 +8,24 @@ If you need to update your libc library cache, use `/usr/glibc-compat/sbin/ldcon
 ## Supported tags and respective `Dockerfile` links
 No `latest` tag, please use specific version tags.
 
- - [`1.94-alpine-glibc`](https://github.com/Docker-Hub-sirmark/docker-rust-alpine-glibc/blob/main/1.94/alpine-glibc/Dockerfile)
+ - [`1.94-alpine-glibc2.42`](https://github.com/Docker-Hub-sirmark/docker-rust-alpine-glibc/blob/main/1.94/alpine-glibc/Dockerfile)
 
 ## Docker Pull Command
 
 ```console
-docker pull sirmark/rust:1.94-alpine-glibc
+docker pull sirmark/rust:1.94-alpine-glibc2.42
 ```
 
 ## Usage Example
 Pull and run.
 ```console
-$ docker pull sirmark/rust:1.94-alpine-glibc
-$ docker run --rm -it sirmark/rust:1.94-alpine-glibc
+$ docker pull sirmark/rust:1.94-alpine-glibc2.42
+$ docker run --rm -it sirmark/rust:1.94-alpine-glibc2.42
 ```
 
 Use in your `Dockerfile`, writing something along the lines of the following will compile and run your project:
 ```dockerfile
-FROM sirmark/rust:1.94-alpine-glibc
+FROM sirmark/rust:1.94-alpine-glibc2.42
 
 WORKDIR /myapp
 COPY . .

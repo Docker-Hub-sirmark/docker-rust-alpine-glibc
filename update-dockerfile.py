@@ -7,10 +7,11 @@ rust_versions = [
     "1.94",
 ]
 
-glibc_version = "2.34-r0"
+glibc_version = "2.42"
 
 docker_arches = [
     "linux/amd64",
+    "linux/arm64",
 ]
 
 def read_file(file):
@@ -27,18 +28,29 @@ def write_file(file, contents):
 def update_alpine_glibc():
     template = read_file("Dockerfile-alpine-glibc.template")
 
+    files_to_copy = [
+        "APKBUILD", "abuilder", "builder",
+        "configparams", "glibc-bin.trigger", "ld.so.conf"
+    ]
+
+    file_contents = {name: read_file(name) for name in files_to_copy}
+
     for version in rust_versions:
         rendered = template \
             .replace("%%TAG%%", version) \
             .replace("%%GLIBC-VERSION%%", glibc_version)
         write_file(f"{version}/alpine-glibc/Dockerfile", rendered)
 
+        for name, content in file_contents.items():
+            write_file(f"{version}/{name}", content)
+
 def update_readme():
     template = read_file("README.template")
 
     for version in rust_versions:
         rendered = template \
-            .replace("%%RUST-VERSION%%", version)
+            .replace("%%RUST-VERSION%%", version) \
+            .replace("%%GLIBC-VERSION%%", glibc_version)
         write_file(f"README.md", rendered)
 
 def update_ci():
@@ -57,7 +69,7 @@ def update_ci():
         versions += f"            platforms: {platform}\n"
         versions += f"            tags: |\n"
         for tag in rust_versions:
-            versions += f"              {tag}-alpine-glibc\n"
+            versions += f"              {tag}-alpine-glibc{glibc_version}\n"
 
     marker = "#VERSIONS\n"
     split = config.split(marker)

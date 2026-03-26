@@ -1,0 +1,10 @@
+.dockerignore
+.git
+.github
+.gitignore
+Dockerfile
+Dockerfile-alpine-glibc.template
+LICENSE
+README.md
+README.template
+update-dockerfile.py
