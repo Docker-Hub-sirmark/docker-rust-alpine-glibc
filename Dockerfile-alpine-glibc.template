@@ -61,7 +61,7 @@ RUN case "${TARGETARCH}" in \
     mv /packages/builder/${TARGET_ARCH}/*.apk /tmp/
 
 # Stage 3: apk add apk, build alpine-glibc
-FROM RUST:${RUST_VERSION}-alpine
+FROM rust:${RUST_VERSION}-alpine
 ARG GLIBC_VERSION \
     TARGETARCH \
     TIMEZONE
