@@ -42,7 +42,7 @@ def update_alpine_glibc():
         write_file(f"{version}/alpine-glibc/Dockerfile", rendered)
 
         for name, content in file_contents.items():
-            write_file(f"{version}/{name}", content)
+            write_file(f"{version}/alpine-glibc/{name}", content)
 
 def update_readme():
     template = read_file("README.template")
