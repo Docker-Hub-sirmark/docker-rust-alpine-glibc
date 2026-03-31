@@ -82,6 +82,7 @@ RUN --mount=from=packager,src=/tmp/,dst=/tmp/ \
         /tmp/glibc-${GLIBC_VERSION}-*.apk \
         /tmp/glibc-bin-${GLIBC_VERSION}-*.apk \
         /tmp/glibc-i18n-${GLIBC_VERSION}-*.apk && \
+    apk upgrade --no-cache && \
     install -Dm 0644 /usr/share/zoneinfo/${TZ} /etc/zoneinfo/${TZ} && \
     /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true && \
     echo "export LANG=C.UTF-8" > /etc/profile.d/locale.sh && \
