@@ -1,0 +1,89 @@
+# The majority of the configuration and commands below are inherited from:
+# - https://github.com/sgerrand/alpine-pkg-glibc
+# - https://github.com/sgerrand/docker-glibc-builder
+# - https://github.com/sgerrand/docker-alpine-abuild
+#
+# Whenever you upgrade GLIBC version, make sure to update it in ALL the stages and the .github/workflows
+# Whenever you upgrade Alpine version, make sure to update it in the stage #3 and the .github/workflows
+
+ARG RUST_VERSION=1.95 \
+    ALPINE_PACKAGER=3.20 \
+    GLIBC_VERSION=2.42
+
+# Stage 1: use docker-glibc-builder build glibc.tar.gz
+FROM ubuntu:24.04 AS builder
+ARG DEBIAN_FRONTEND=noninteractive \
+    GLIBC_VERSION
+LABEL maintainer="Sasha Gerrand <github+docker-glibc-builder@sgerrand.com>"
+COPY ./configparams /glibc-build/configparams
+COPY ./builder /builder
+RUN apt-get -q update && \
+    apt-get -qy install \
+    bison \
+    build-essential \
+    gawk \
+    gettext \
+    openssl \
+    python3 \
+    texinfo \
+    wget && \
+    chmod +x /builder && \
+    env PREFIX_DIR=/usr/glibc-compat /builder
+
+# Stage 2: use docker-alpine-abuild package apk and keys
+# NOTE: Alpine 3.20 image is used for packaging since the build script fails for unknown reason on the newer Alpine versions.
+#       The building Alpine version does not affect the use of the package in a newer Alpine version, so we are good for now.
+FROM alpine:${ALPINE_PACKAGER} AS packager
+ARG GLIBC_VERSION \
+    TARGETARCH
+ENV PACKAGER="glibc@gliderlabs.com"
+RUN apk --no-cache add alpine-sdk coreutils cmake sudo && \
+    adduser -G abuild -g "Alpine Package Builder" -s /bin/ash -D builder && \
+    echo "builder ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    mkdir /packages && \
+    chown builder:abuild /packages
+COPY ./abuilder /bin/
+USER builder
+RUN abuild-keygen -na && sudo cp /home/builder/.abuild/${PACKAGER}-*.rsa.pub /etc/apk/keys/
+WORKDIR /home/builder/package
+COPY --from=builder /glibc-bin.tar.gz ./
+COPY ./APKBUILD ./abuilder ./glibc-bin.trigger ./ld.so.conf ./
+RUN case "${TARGETARCH}" in \
+    amd64)   export TARGET_ARCH="x86_64" ;; \
+    arm64)   export TARGET_ARCH="aarch64" ;; \
+    *)       echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    sed -i "s/^pkgver=.*/pkgver=${GLIBC_VERSION}/" APKBUILD && \
+    sed -i "s/^arch=.*$/arch=\"${TARGET_ARCH}\"/" APKBUILD && \
+    abuild checksum && \
+    sudo chmod +x ./abuilder && \
+    env REPODEST=/packages ./abuilder -r && \
+    mv /packages/builder/${TARGET_ARCH}/*.apk /tmp/
+
+# Stage 3: apk add apk, build alpine-glibc
+FROM rust:${RUST_VERSION}-alpine
+ARG GLIBC_VERSION \
+    TARGETARCH \
+    TIMEZONE
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    TZ=${TIMEZONE:-UTC}
+RUN --mount=from=packager,src=/tmp/,dst=/tmp/ \
+    --mount=from=packager,src=/etc/apk/keys,dst=/etc/apk/keys/ \
+    case "${TARGETARCH}" in \
+    amd64)   export LD_LINUX_PATH="/lib/ld-linux-x86_64.so.2" ;; \
+    arm64)   export LD_LINUX_PATH="/lib/ld-linux-aarch64.so.1" ;; \
+    *)       echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    apk add --no-cache \
+        musl-locales \
+        musl-locales-lang \
+        tzdata \
+        /tmp/glibc-${GLIBC_VERSION}-*.apk \
+        /tmp/glibc-bin-${GLIBC_VERSION}-*.apk \
+        /tmp/glibc-i18n-${GLIBC_VERSION}-*.apk && \
+    apk upgrade --no-cache && \
+    install -Dm 0644 /usr/share/zoneinfo/${TZ} /etc/zoneinfo/${TZ} && \
+    /usr/glibc-compat/bin/localedef --force --inputfile POSIX --charmap UTF-8 C.UTF-8 || true && \
+    echo "export LANG=C.UTF-8" > /etc/profile.d/locale.sh && \
+    apk del glibc-i18n
