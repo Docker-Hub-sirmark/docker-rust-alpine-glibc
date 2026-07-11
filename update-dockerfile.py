@@ -4,7 +4,7 @@ import os
 import sys
 
 rust_versions = [
-    "1.96",
+    "1.97",
 ]
 
 glibc_version = "2.42"
