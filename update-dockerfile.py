@@ -7,7 +7,7 @@ rust_versions = [
     "1.97",
 ]
 
-glibc_version = "2.42"
+glibc_version = "2.44"
 
 docker_arches = [
     "linux/amd64",

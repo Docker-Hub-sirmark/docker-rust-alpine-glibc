@@ -8,7 +8,7 @@
 
 ARG RUST_VERSION=1.97 \
     ALPINE_PACKAGER=3.20 \
-    GLIBC_VERSION=2.42
+    GLIBC_VERSION=2.44
 
 # Stage 1: use docker-glibc-builder build glibc.tar.gz
 FROM ubuntu:24.04 AS builder
